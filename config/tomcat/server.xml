@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Metasploitable3 ARM64 — Tomcat server.xml
+  CVE-2020-1938 Ghostcat: AJP connector on port 8009, address=0.0.0.0
+  CVE-2025-24813: partial PUT enabled via allowCasualMultipartParsing
+-->
+<Server port="8005" shutdown="SHUTDOWN">
+
+  <Service name="Catalina">
+
+    <!-- Standard HTTP connector -->
+    <Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+
+    <!--
+      CVE-2020-1938 Ghostcat (CRITICAL, CVSS 9.8)
+      AJP connector exposed on all interfaces with no secret and no RequiredSecret.
+      Allows unauthenticated file read from any path in the webapp.
+      Metasploit: auxiliary/admin/http/tomcat_ghostcat
+    -->
+    <Connector port="8009"
+               protocol="AJP/1.3"
+               address="0.0.0.0"
+               redirectPort="8443"
+               secretRequired="false" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+      </Host>
+    </Engine>
+
+  </Service>
+</Server>

