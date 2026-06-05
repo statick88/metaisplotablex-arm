@@ -18,11 +18,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image (ARM64 + AMD64)
+      - name: Build image (ARM64)
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/arm64,linux/amd64
+          platforms: linux/arm64
           push: false
           load: true
           tags: metaisplotablex-arm:ci
