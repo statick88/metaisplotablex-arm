@@ -1,0 +1,10 @@
+Port 22
+PermitRootLogin yes
+PasswordAuthentication yes
+PermitEmptyPasswords yes
+ChallengeResponseAuthentication no
+UsePAM no
+X11Forwarding yes
+MaxAuthTries 100
+LoginGraceTime 120
+Banner /etc/ssh/banner
