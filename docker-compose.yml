@@ -1,0 +1,72 @@
+# =============================================================================
+# Metasploitable3 ARM64 — Docker Compose (extended CVE May 2026)
+# WARNING: FOR EDUCATIONAL/CTF USE ONLY.
+# =============================================================================
+
+services:
+  metasploitable3-arm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: metasploitable3-arm:latest
+    container_name: metasploitable3
+    hostname: metasploitable3
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 3G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+    ports:
+      - "0.0.0.0:21:21"       # vsftpd — CVE-2011-2523
+      - "0.0.0.0:22:22"       # OpenSSH — CVE-2024-6387 regreSSHion
+      - "0.0.0.0:80:80"       # Apache — CVE-2024-38474 + Shellshock
+      - "0.0.0.0:139:139"     # Samba NetBIOS
+      - "0.0.0.0:445:445"     # Samba — CVE-2017-7494 SambaCry
+      - "0.0.0.0:2121:2121"   # ProFTPd — CVE-2015-3306 mod_copy
+      - "0.0.0.0:3306:3306"   # MariaDB — CVE-2021-27928
+      - "0.0.0.0:6200:6200"   # vsftpd backdoor sim
+      - "0.0.0.0:6379:6379"   # Redis — CVE-2022-0543 unauthenticated RCE
+      - "0.0.0.0:6667:6667"   # UnrealIRCd — CVE-2010-2075 backdoor
+      - "0.0.0.0:8009:8009"   # Tomcat AJP — CVE-2020-1938 Ghostcat
+      - "0.0.0.0:8080:8080"   # Tomcat — CVE-2025-24813 + Log4Shell
+      - "0.0.0.0:8585:8585"   # Apache RCE shell
+
+    networks:
+      ms3net:
+        ipv4_address: 172.20.0.10
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+    volumes:
+      - ms3_logs:/var/log/supervisor
+      - ms3_db:/var/lib/mysql
+
+    environment:
+      - TZ=UTC
+
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  ms3net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
+volumes:
+  ms3_logs:
+  ms3_db:

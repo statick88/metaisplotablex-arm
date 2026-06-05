@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [develop, "feature/**"]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: pip install -e ".[test]"
+
+      - name: Build container
+        run: docker compose build
+
+      - name: Start container
+        run: |
+          docker compose up -d
+          sleep 60  # wait for all services to initialize
+
+      - name: Run TDD test suite
+        run: pytest tests/ -v --tb=short
+
+      - name: Show service status on failure
+        if: failure()
+        run: docker exec metasploitable3 supervisorctl status || true
