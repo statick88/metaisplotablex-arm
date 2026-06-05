@@ -13,7 +13,8 @@ def test_ssh_root_login(target: str) -> None:
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        client.connect(target, port=22, username="root", password="root", timeout=10)
+        # Host port 22 → macOS sshd conflict; Docker compose maps 22 to 2222 on host
+        client.connect(target, port=2222, username="root", password="root", timeout=10)
         _, stdout, _ = client.exec_command("id")
         output = stdout.read().decode()
         assert "uid=0(root)" in output

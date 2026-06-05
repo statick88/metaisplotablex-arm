@@ -1,0 +1,19 @@
+#!/bin/bash
+# Metasploitable3 ARM64 — Tomcat 9 init script for supervisord
+# Fixes CVE-2025-24813 + CVE-2020-1938 (Ghostcat) + Log4Shell webapp
+
+set -e
+
+export JAVA_HOME=/usr/lib/jvm/default-java
+export CATALINA_BASE=/usr/share/tomcat9
+export CATALINA_HOME=/usr/share/tomcat9
+
+# Ensure logs dir exists and is writable for tomcat user
+mkdir -p /var/log/tomcat9 /var/lib/tomcat9/logs
+chown -R tomcat:tomcat /var/log/tomcat9 /var/lib/tomcat9/logs || true
+
+# Workaround Ubuntu/Docker packaging quirk: some images set a Catalina base that
+# drops the expected metadata. Force the container base before startup.
+rm -rf "${CATALINA_BASE}/.metadata" || true
+
+exec su -s /bin/bash tomcat -c "${CATALINA_BASE}/bin/catalina.sh run"

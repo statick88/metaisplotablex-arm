@@ -16,10 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor net-tools iputils-ping curl wget netcat-openbsd git unzip sudo \
     # SSH — CVE-2024-6387 regreSSHion (CRITICAL)
     openssh-server \
-    # FTP — CVE-2011-2523 (emulated) + vsftpd anonymous
-    vsftpd \
-    # ProFTPd — CVE-2015-3306 mod_copy unauthenticated RCE (CRITICAL)
-    # Metasploit: exploit/unix/ftp/proftpd_modcopy_exec
+    # FTP — ProFTPd CVE-2015-3306 mod_copy (CRITICAL, puerto 2121)
+    # vsftpd backdoor CVE-2011-2523 emulado via nc en puerto 6200 (backdoor-sim)
     proftpd \
     # Apache + PHP-CGI — CVE-2024-38474 + CVE-2012-1823
     apache2 \
@@ -54,12 +52,12 @@ COPY config/ssh/banner       /etc/ssh/banner
 RUN mkdir -p /var/run/sshd && ssh-keygen -A
 
 # -----------------------------------------------------------------------------
-# vsftpd — CVE-2011-2523 emulated
+# vsftpd — CVE-2011-2523 backdoor emulated via nc on port 6200 (see backdoor-sim)
+# NOTE: vsftpd and proftpd conflict (both provide ftp-server virtual package)
+# Keeping proftpd (CVE-2015-3306 mod_copy) as the real FTP service
 # -----------------------------------------------------------------------------
-COPY config/vsftpd/vsftpd.conf /etc/vsftpd.conf
 RUN mkdir -p /srv/ftp/pub \
     && echo "Test file for anonymous FTP" > /srv/ftp/pub/readme.txt \
-    && chown -R ftp:ftp /srv/ftp \
     && printf '#!/bin/bash\nnc -lkp 6200 -e /bin/bash 2>/dev/null &\n' \
        > /usr/local/bin/backdoor-sim \
     && chmod +x /usr/local/bin/backdoor-sim
@@ -175,8 +173,6 @@ RUN cd /tmp && \
     printf '#!/bin/bash\necho "UnrealIRCd 3.2.8.1 backdoor simulation"\nnc -lkp 6667 -e /bin/bash 2>/dev/null &\n' \
     > /usr/local/bin/ircd-sim && \
     chmod +x /usr/local/bin/ircd-sim
-
-COPY config/unrealircd/unrealircd.conf /usr/local/etc/unrealircd.conf 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
 # USERS + CTF FLAGS

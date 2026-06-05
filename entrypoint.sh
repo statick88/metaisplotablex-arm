@@ -15,20 +15,15 @@ if [ ! -f "$DB_INIT_MARKER" ]; then
     echo "[entrypoint] Initializing MariaDB for the first time..."
 
     # Start mysqld temporarily for bootstrapping
-    mysqld_safe --skip-grant-tables --skip-networking &
+    mysqld_safe --skip-grant-tables &
     MYSQL_PID=$!
-    sleep 5
+    sleep 10
 
-    mysql -u root <<-EOSQL
-        FLUSH PRIVILEGES;
-        ALTER USER 'root'@'localhost' IDENTIFIED BY '';
-        CREATE DATABASE IF NOT EXISTS dvwa CHARACTER SET utf8mb4;
-        GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '' WITH GRANT OPTION;
-        GRANT ALL PRIVILEGES ON dvwa.* TO 'dvwa'@'%' IDENTIFIED BY 'p@ssw0rd';
-        FLUSH PRIVILEGES;
+    mysql -u root <<EOSQL
+CREATE DATABASE IF NOT EXISTS dvwa CHARACTER SET utf8mb4;
 EOSQL
 
-    kill $MYSQL_PID
+    mysqladmin -u root shutdown 2>/dev/null || kill $MYSQL_PID
     wait $MYSQL_PID 2>/dev/null || true
     touch "$DB_INIT_MARKER"
     echo "[entrypoint] MariaDB initialized."

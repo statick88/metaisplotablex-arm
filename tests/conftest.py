@@ -43,6 +43,7 @@ def target() -> str:
 
 @pytest.fixture(scope="session", autouse=True)
 def wait_for_container(target: str) -> None:
-    assert _wait_for_port(target, 22, timeout=120), (
+    # Host SSH port remapped to 2222 (macOS sshd uses 22)
+    assert _wait_for_port(target, 2222, timeout=120), (
         "Container not ready. Run: docker compose up -d && sleep 60"
     )

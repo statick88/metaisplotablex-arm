@@ -7,7 +7,22 @@ Each test follows the red→green cycle:
 
 import socket
 import pytest
-from conftest import SERVICES, TARGET_HOST
+
+SERVICES: dict[str, int] = {
+    "ftp":          21,
+    "http":         80,
+    "proftpd":      2121,
+    "smb":          445,
+    "mysql":        3306,
+    "backdoor":     6200,
+    "redis":        6379,
+    "irc":          6667,
+    "tomcat_ajp":   8009,
+    "tomcat_http":  8080,
+    "rce_shell":    8585,
+}
+
+TARGET_HOST = "localhost"
 
 
 def _tcp_open(host: str, port: int) -> bool:
