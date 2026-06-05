@@ -1,0 +1,69 @@
+# =============================================================================
+# Metasploitable3 ARM64 — Docker Compose
+# Network: isolated bridge ms3net (172.20.0.0/24)
+# WARNING: FOR EDUCATIONAL/CTF USE ONLY.
+# =============================================================================
+
+services:
+  metasploitable3-arm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: metasploitable3-arm:latest
+    container_name: metasploitable3
+    hostname: metasploitable3
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+    ports:
+      - "0.0.0.0:21:21"
+      - "0.0.0.0:22:22"
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:139:139"
+      - "0.0.0.0:445:445"
+      - "0.0.0.0:3306:3306"
+      - "0.0.0.0:6200:6200"
+      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:8585:8585"
+
+    networks:
+      ms3net:
+        ipv4_address: 172.20.0.10
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+
+    volumes:
+      - ms3_logs:/var/log/supervisor
+      - ms3_db:/var/lib/mysql
+
+    environment:
+      - TZ=UTC
+
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  ms3net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
+volumes:
+  ms3_logs:
+  ms3_db:
