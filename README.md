@@ -64,17 +64,16 @@ docker exec metasploitable3 supervisorctl status
 
 ---
 
-## Build Multi-Platform Image (Docker Hub)
+## Docker Hub
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/statick/metaisplotable3-arm.svg)](https://hub.docker.com/r/statick/metaisplotable3-arm)
 
 ```bash
-docker buildx create --name ms3-builder --use
-docker buildx inspect --bootstrap
-
-docker buildx build \
-  --platform linux/arm64,linux/amd64 \
-  -t your-username/metasploitable3-arm:latest \
-  --push .
+docker pull statick/metaisplotable3-arm:latest
 ```
+
+- Repo: https://hub.docker.com/r/statick/metaisplotable3-arm
+- Tag actual: `v1.3.0` / `latest`
 
 ---
 
