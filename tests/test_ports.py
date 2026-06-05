@@ -38,5 +38,5 @@ def test_service_port_open(target: str, service: str, port: int) -> None:
     """Every declared service must have its TCP port open."""
     assert _tcp_open(target, port), (
         f"Service '{service}' not reachable on {target}:{port}. "
-        f"Check: docker exec metasploitable3 supervisorctl status"
+        f"Check: docker exec metaisplotablex supervisorctl status"
     )

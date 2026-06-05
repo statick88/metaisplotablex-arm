@@ -25,8 +25,8 @@ hotfix/<short-description>
 ## Getting Started
 
 ```bash
-git clone https://github.com/your-username/metasploitable3-arm.git
-cd metasploitable3-arm
+git clone https://github.com/your-username/metaisplotablex-arm.git
+cd metaisplotablex-arm
 git checkout develop
 git checkout -b feature/your-feature
 ```

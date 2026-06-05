@@ -24,9 +24,9 @@ jobs:
           context: .
           platforms: linux/arm64,linux/amd64
           push: false
-          tags: metasploitable3-arm:ci
+          tags: metaisplotablex-arm:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Verify image was built
-        run: docker images metasploitable3-arm
+        run: docker images metaisplotablex-arm

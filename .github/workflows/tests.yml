@@ -32,4 +32,4 @@ jobs:
 
       - name: Show service status on failure
         if: failure()
-        run: docker exec metasploitable3 supervisorctl status || true
+        run: docker exec metaisplotablex supervisorctl status || true
