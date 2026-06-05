@@ -1,0 +1,40 @@
+name: Bug Report
+description: A service is broken or the container fails to start
+labels: ["bug"]
+body:
+  - type: input
+    id: service
+    attributes:
+      label: Affected Service
+      placeholder: "e.g. vsftpd, tomcat, mariadb"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: Describe the unexpected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. docker compose up -d
+        2. nc -z localhost 21
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: arch
+    attributes:
+      label: Host Architecture
+      placeholder: "arm64 / amd64"
+    validations:
+      required: true
+  - type: input
+    id: docker_version
+    attributes:
+      label: Docker Version
+      placeholder: "docker --version output"
